@@ -44,20 +44,18 @@ func deleteDuplicates(head *ListNode) *ListNode {
     if head == nil {
         return head
     }
-    dummy := &ListNode{Val: 0}
-    dummy.Next = head
-    head = dummy
+    dummy := &ListNode{Next: head}
 
-    var rmVal int
-    for head.Next != nil && head.Next.Next != nil {
-        if head.Next.Val == head.Next.Next.Val {
+    cur := dummy
+    for cur.Next != nil && cur.Next.Next != nil {
+        if cur.Next.Val == cur.Next.Next.Val {
             // 记录已经删除的值，用于后续节点判断
-            rmVal = head.Next.Val
-            for head.Next != nil && head.Next.Val == rmVal  {
-                head.Next = head.Next.Next
+            rmVal := cur.Next.Val
+            for cur.Next != nil && cur.Next.Val == rmVal  {
+                cur.Next = cur.Next.Next
             }
         } else {
-            head = head.Next
+            cur = cur.Next
         }
     }
     return dummy.Next
@@ -78,16 +76,12 @@ func deleteDuplicates(head *ListNode) *ListNode {
 ```go
 func reverseList(head *ListNode) *ListNode {
     var prev *ListNode
-    for head != nil {
-        // 保存当前head.Next节点，防止重新赋值后被覆盖
-        // 一轮之后状态：nil<-1 2->3->4
-        //              prev   head
-        temp := head.Next
-        head.Next = prev
-        // pre 移动
-        prev = head
-        // head 移动
-        head = temp
+    cur := head
+    for cur != nil {
+        next := cur.Next
+        cur.Next = prev
+        prev = cur
+        cur = next
     }
     return prev
 }
@@ -101,42 +95,7 @@ func reverseList(head *ListNode) *ListNode {
 
 ```go
 func reverseBetween(head *ListNode, m int, n int) *ListNode {
-    // 思路：先遍历到m处，翻转，再拼接后续，注意指针处理
-    // 输入: 1->2->3->4->5->NULL, m = 2, n = 4
-    if head == nil {
-        return head
-    }
-    // 头部变化所以使用dummy node
-    dummy := &ListNode{Val: 0}
-    dummy.Next = head
-    head = dummy
-    // 最开始：0->1->2->3->4->5->nil
-    var pre *ListNode
-    var i = 0
-    for i < m {
-        pre = head
-        head = head.Next
-        i++
-    }
-    // 遍历之后： 1(pre)->2(head)->3->4->5->NULL
-    // i = 1
-    var j = i
-    var next *ListNode
-    // 用于中间节点连接
-    var mid = head
-    for head != nil && j <= n {
-        // 第一次循环： 1 nil<-2 3->4->5->nil
-        temp := head.Next
-        head.Next = next
-        next = head
-        head = temp
-        j++
-    }
-    // 循环需要执行四次
-    // 循环结束：1 nil<-2<-3<-4 5(head)->nil
-    pre.Next = next
-    mid.Next = head
-    return dummy.Next
+    // TODO: 插头法
 }
 ```
 
