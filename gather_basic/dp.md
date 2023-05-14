@@ -4,7 +4,7 @@
 
 先从一道题目开始~
 
-如题  [triangle](https://leetcode-cn.com/problems/triangle/)
+### [triangle](https://leetcode-cn.com/problems/triangle/)
 
 > 给定一个三角形，找出自顶向下的最小路径和。每一步只能移动到下一行中相邻的结点上。
 
@@ -21,132 +21,109 @@
 
 自顶向下的最小路径和为  11（即，2 + 3 + 5 + 1 = 11）。
 
-使用 DFS（遍历 或者 分治法）
+- 使用 DFS（遍历 或者 分治法）
 
 遍历
 
-![image.png](https://img.fuiboom.com/img/dp_triangle.png)
+```go
+func minimumTotal(triangle [][]int) int {
+    n := len(triangle)
+    var best int = math.MaxInt
 
-分治法
+    var dfs func(x, y int, sum int)
+    dfs = func(x, y int, sum int) {
+        if x == n {
+            if sum < best {
+                best = sum
+            }
+            return
+        }
+        if y >= len(triangle[x]) {
+            return
+        }
+        sum += triangle[x][y]
+        dfs(x+1, y, sum)
+        dfs(x+1, y+1, sum)
+    }
 
-![image.png](https://img.fuiboom.com/img/dp_dc.png)
+    dfs(0, 0, 0)
+    return best
+}
+```
 
-优化 DFS，缓存已经被计算的值（称为：记忆化搜索 本质上：动态规划）
+- 分治法
 
-![image.png](https://img.fuiboom.com/img/dp_memory_search.png)
+假定已知底层子集结果，上层进行一个组装
+```go
+func minimumTotal(triangle [][]int) int {
+    n := len(triangle)
 
-动态规划就是把大问题变成小问题，并解决了小问题重复计算的方法称为动态规划
+    var curFloorMin func(x, y int) int
+    curFloorMin = func(x, y int) int {
+        if x == n {
+            return 0
+        }
+        if y >= len(triangle[x]) {
+            return 0
+        }
+        return triangle[x][y] + min(curFloorMin(x+1, y), curFloorMin(x+1, y+1))
+    }
+
+    return curFloorMin(0, 0)
+}
+func min(x, y int) int {
+    if x < y {
+        return x
+    }
+    return y
+}
+```
 
 动态规划和 DFS 区别
 
 - 二叉树 子问题是没有交集，所以大部分二叉树都用递归或者分治法，即 DFS，就可以解决
 - 像 triangle 这种是有重复走的情况，**子问题是有交集**，所以可以用动态规划来解决
 
-动态规划，自底向上
+此题的动态规划解法
+
+求 f[i][j]
+
+通常：min(f[i-1][j-1], f[i-1][j]) + triangle[i][j]
+
+j = 0: f[i-1][0]+triangle[i][0]
+
+j = i: f[i-1][i-1] + triangle[i][i]
 
 ```go
 func minimumTotal(triangle [][]int) int {
-	if len(triangle) == 0 || len(triangle[0]) == 0 {
-		return 0
-	}
-	// 1、状态定义：f[i][j] 表示从i,j出发，到达最后一层的最短路径
-	var l = len(triangle)
-	var f = make([][]int, l)
-	// 2、初始化
-	for i := 0; i < l; i++ {
-		for j := 0; j < len(triangle[i]); j++ {
-			if f[i] == nil {
-				f[i] = make([]int, len(triangle[i]))
-			}
-			f[i][j] = triangle[i][j]
-		}
-	}
-	// 3、递推求解
-	for i := len(triangle) - 2; i >= 0; i-- {
-		for j := 0; j < len(triangle[i]); j++ {
-			f[i][j] = min(f[i+1][j], f[i+1][j+1]) + triangle[i][j]
-		}
-	}
-	// 4、答案
-	return f[0][0]
-}
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
-}
-
-```
-
-动态规划，自顶向下
-
-```go
-// 测试用例：
-// [
-// [2],
-// [3,4],
-// [6,5,7],
-// [4,1,8,3]
-// ]
-func minimumTotal(triangle [][]int) int {
-    if len(triangle) == 0 || len(triangle[0]) == 0 {
-        return 0
+    n := len(triangle)
+    f := make([][]int, n)
+    for i := range triangle {
+        f[i] = make([]int, len(triangle[i]))
     }
-    // 1、状态定义：f[i][j] 表示从0,0出发，到达i,j的最短路径
-    var l = len(triangle)
-    var f = make([][]int, l)
-    // 2、初始化
-    for i := 0; i < l; i++ {
-        for j := 0; j < len(triangle[i]); j++ {
-            if f[i] == nil {
-                f[i] = make([]int, len(triangle[i]))
-            }
-            f[i][j] = triangle[i][j]
+    f[0][0] = triangle[0][0]
+    for i := 1; i < n; i++ {
+        f[i][0] = triangle[i][0] + f[i-1][0]
+        for j := 1; j < i; j++ {
+            f[i][j] = triangle[i][j] + min(f[i-1][j], f[i-1][j-1])
         }
+        f[i][i] = triangle[i][i] + f[i-1][i-1]
     }
-    // 递推求解
-    for i := 1; i < l; i++ {
-        for j := 0; j < len(triangle[i]); j++ {
-            // 这里分为两种情况：
-            // 1、上一层没有左边值
-            // 2、上一层没有右边值
-            if j-1 < 0 {
-                f[i][j] = f[i-1][j] + triangle[i][j]
-            } else if j >= len(f[i-1]) {
-                f[i][j] = f[i-1][j-1] + triangle[i][j]
-            } else {
-                f[i][j] = min(f[i-1][j], f[i-1][j-1]) + triangle[i][j]
-            }
-        }
+    res := math.MaxInt
+    for j := range f[n-1] { // 最后一行遍历
+        res = min(res, f[n-1][j])
     }
-    result := f[l-1][0]
-    for i := 1; i < len(f[l-1]); i++ {
-        result = min(result, f[l-1][i])
-    }
-    return result
+    return res
 }
-func min(a, b int) int {
-    if a > b {
-        return b
+func min(x, y int) int {
+    if x < y {
+        return x
     }
-    return a
+    return y
 }
 ```
 
-## 递归和动规关系
 
-递归是一种程序的实现方式：函数的自我调用
-
-```go
-Function(x) {
-	...
-	Funciton(x-1);
-	...
-}
-```
-
-动态规划：是一种解决问 题的思想，大规模问题的结果，是由小规模问 题的结果运算得来的。动态规划可用递归来实现(Memorization Search)
 
 ## 使用场景
 
@@ -171,7 +148,7 @@ Function(x) {
 4. 答案 Answer
    - 最大的那个状态是什么，终点
 
-## 常见四种类型
+> 常见四种类型
 
 1. Matrix DP (10%)
 1. Sequence (40%)
